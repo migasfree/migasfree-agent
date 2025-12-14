@@ -11,7 +11,7 @@ import sys
 import requests
 import ssl
 import time
-from datetime import datetime
+
 
 
 try:
@@ -121,8 +121,7 @@ class MultiProtocolAgent:
         }
         # Wait for WebSocket to be open (handled by connect logic)
         await self.websocket.send(json.dumps(message))
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{now_str}] ✅ Agent registered: {self.agent_id}")
+        print(f"✅ Agent registered: {self.agent_id}")
     async def handle_tcp_tunnel(self, tunnel_id, service='ssh', client_cn=None):
         """Handles a TCP tunnel to any local service"""
         if service not in self.services:
@@ -130,8 +129,7 @@ class MultiProtocolAgent:
             return
         
         port = self.services[service]
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{now_str}] 🔗 Starting tunnel {service.upper()}: {tunnel_id} -> port {port} (Client: {client_cn})")
+        print(f"🔗 Starting tunnel {service.upper()}: {tunnel_id} -> port {port} (Client: {client_cn})")
         try:
             reader, writer = await asyncio.open_connection('127.0.0.1', port)
             self.tcp_tunnels[tunnel_id] = {
@@ -191,8 +189,7 @@ class MultiProtocolAgent:
                 service = self.tcp_tunnels[tunnel_id].get('service', 'unknown').upper()
 
                 del self.tcp_tunnels[tunnel_id]
-                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                print(f"[{now_str}] ⛔ Tunnel closed {service}: {tunnel_id}{duration_str}{client_str}")
+                print(f"⛔ Tunnel closed {service}: {tunnel_id}{duration_str}{client_str}")
                 
                 if self.websocket and self.websocket.open:
                     await self.websocket.send(json.dumps({
