@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "remove" ]; then
+    systemctl stop migasfree-agent
+    systemctl disable migasfree-agent
+fi
+
+exit 0

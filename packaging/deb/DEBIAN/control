@@ -1,0 +1,9 @@
+Package: migasfree-agent
+Version: 1.1.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3, python3-requests, python3-websockets, migasfree-client
+Maintainer: Alberto Gacías <alberto@migasfree.org>
+Description: Multi-protocol TCP Tunnel Agent
+ Agent to facilitate remote access via SSH, VNC, RDP through a WebSocket tunnel.

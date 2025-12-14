@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+    systemctl daemon-reload
+    if systemctl is-enabled migasfree-agent >/dev/null 2>&1; then
+        systemctl restart migasfree-agent
+    else
+        systemctl enable migasfree-agent
+        systemctl start migasfree-agent
+    fi
+fi
+
+exit 0
