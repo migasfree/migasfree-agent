@@ -1,0 +1,16 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution output
+dist/
+
+# Debian packaging artifacts
+packaging/deb/usr/bin/migasfree-agent
+
+# RPM packaging artifacts
+packaging/rpm/SOURCES/
+packaging/rpm/BUILD/
+packaging/rpm/RPMS/
+packaging/rpm/SRPMS/
