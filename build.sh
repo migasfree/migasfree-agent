@@ -26,6 +26,9 @@ dpkg-deb --build $DEB_DIR $DIST_DIR
 echo "--- Building RPM Package ---"
 # Check if rpmbuild exists
 if command -v rpmbuild >/dev/null 2>&1; then
+    # Create structure
+    mkdir -p $RPM_DIR/{SOURCES,BUILD,RPMS,SRPMS}
+
     # Copy sources
     cp agent/migasfree-agent $RPM_DIR/SOURCES/migasfree-agent
     cp $DEB_DIR/lib/systemd/system/migasfree-agent.service $RPM_DIR/SOURCES/
