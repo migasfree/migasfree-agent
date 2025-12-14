@@ -1,0 +1,38 @@
+name: Build Package
+
+on:
+  push:
+    tags:
+      - '*'
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y rpm
+
+    - name: Build Package
+      run: |
+        chmod +x build.sh
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "Building version $VERSION"
+          ./build.sh $VERSION
+        else
+          ./build.sh
+        fi
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: packages
+        path: dist/
