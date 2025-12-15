@@ -12,43 +12,22 @@ import requests
 import ssl
 import time
 
+from migasfree_client import settings
+from migasfree_client.utils import get_config   
+from migasfree_client.mtls import get_mtls_key_file, get_mtls_cert_file, get_mtls_ca_file
 
 
-try:
-    from migasfree_client import settings
-    from migasfree_client.utils import get_config
-    FQDN = get_config(settings.CONF_FILE, 'client').get('server', 'localhost')
-    CERT_PATH = settings.CERT_PATH
-    MTLS_KEY_FILE = settings.MTLS_KEY_FILE
-    MTLS_CERT_FILE = settings.MTLS_CERT_FILE
-    CA_CERT_FILE = f"{CERT_PATH}/ca.pem"
-except Exception as e:
-    print(f"❌ migasfree-client not found") 
-    exit(0)
-
-
-# =======================================================================
-# TODO Remove this when migasfree-client is updated
-import os
-if not os.path.exists(CA_CERT_FILE):
-    # Download CA certificate
-    response = requests.get("https://inv.org/manager/v1/public/ca", verify=False)
-    if response.status_code == 200:
-        with open(CA_CERT_FILE, 'wb') as f:
-            f.write(response.content)
-        print(f"✅ CA certificate downloaded to: {CA_CERT_FILE}")
-    else:
-        print(f"❌ Failed to download CA certificate")
-        exit(0)
-# =======================================================================
-    
+FQDN = get_config(settings.CONF_FILE, 'client').get('server', 'localhost')
+MTLS_KEY_FILE = get_mtls_key_file(FQDN)
+MTLS_CERT_FILE = get_mtls_cert_file(FQDN)
+CA_CERT_FILE = get_mtls_ca_file(FQDN)
+  
 
 # Create SSL context (verifies certificates using system CA store)
 ssl_context = ssl.create_default_context()
 
 try:
     ssl_context.load_verify_locations(cafile=CA_CERT_FILE) 
-    print(f"✅ CA certificate loaded from: {CA_CERT_FILE}")
 except Exception as e:
     print(f"❌ Failed to load CA certificate: {e}")
 
@@ -57,10 +36,8 @@ try:
         certfile=MTLS_CERT_FILE,
         keyfile=MTLS_KEY_FILE
     )
-    print("🔐 mTLS certificate loaded for WebSocket")
 except Exception as e:
     print(f"⚠️ Failed to load mTLS certificate: {e}")
-
 
 
 class MultiProtocolAgent:
@@ -220,7 +197,7 @@ class MultiProtocolAgent:
             try:
                 # 1. Get assignment from Manager (Non-blocking way)
                 if not self.server_url:
-                    print(f"🌐 Contacting Manager at {self.manager_url}...")
+                    print(f"🌐 Contacting Manager at {self.manager_url}")
                     
                     # Run requests in a thread to avoid blocking the loop
                     def fetch_assignment():
@@ -248,7 +225,7 @@ class MultiProtocolAgent:
                         await asyncio.sleep(5)
                         continue
                 # 2. Connect to Relay
-                print(f"🔌 Connecting to {self.server_url}...")
+                print(f"🔌 Connecting to {self.server_url}")
                 
                 # Prepare connection kwargs
                 connect_kwargs = {
