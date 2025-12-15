@@ -16,6 +16,7 @@ sed -i "s/^Version: .*/Version: $VERSION/" $DEB_DIR/DEBIAN/control
 # --- BUILD DEB ---
 echo "--- Building DEB Package ---"
 # Copy files to structure
+mkdir -p $DEB_DIR/usr/bin
 cp agent/migasfree-agent $DEB_DIR/usr/bin/migasfree-agent
 chmod 755 $DEB_DIR/usr/bin/migasfree-agent
 
