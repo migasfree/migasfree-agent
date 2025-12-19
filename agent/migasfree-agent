@@ -9,6 +9,7 @@ enabling remote access to local services through mTLS authentication.
 import asyncio
 import json
 import logging
+import os
 import socket
 import ssl
 import sys
@@ -326,12 +327,22 @@ class MultiProtocolAgent:
         logger.info(f'Executing command from {client_cn}: {command}')
 
         try:
+            # Prepare environment with forced color settings
+            env = {
+                'TERM': 'xterm-256color',
+                'FORCE_COLOR': '1',
+                'CLICOLOR_FORCE': '1',
+                'PYTHONUNBUFFERED': '1',
+                **dict(os.environ),  # Inherit current env
+            }
+
             # Execute command with streaming output (non-interactive)
             process = await asyncio.create_subprocess_shell(
                 command,
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=env,
             )
 
             # Stream stdout and stderr concurrently
