@@ -42,8 +42,15 @@ logger = logging.getLogger(__name__)
 
 # Constants
 EVENTS_JSON_FILE = settings.EVENTS_JSON_FILE
-DEFAULT_SERVICES = {'ssh': 22, 'vnc': 5900, 'rdp': 3389}  # Typical services on Linux
+DEFAULT_SERVICES = {
+    'ssh': 22,
+    'vnc': 5900,
+    'rdp': 3389,
+    'exec': 0,
+}  # exec doesn't need a port
 RECONNECT_DELAY = 5
+# Allowed commands for execution (whitelist for security)
+ALLOWED_COMMANDS = ['migasfree']
 PORT_CHECK_TIMEOUT = 0.5
 BUFFER_SIZE = 8192
 WEBSOCKET_CONFIG = {
@@ -253,7 +260,10 @@ class MultiProtocolAgent:
             'start_tcp_tunnel': self._handle_start_tunnel,
             'tunnel_data': self._handle_tunnel_data,
             'close_tcp_tunnel': self._handle_close_tunnel,
+            'execute_command': self._handle_execute_command,
         }
+        # Handlers that should run in background (non-blocking)
+        background_handlers = {'execute_command'}
 
         try:
             async for message_raw in self.websocket:
@@ -261,7 +271,11 @@ class MultiProtocolAgent:
                 msg_type = message.get('type')
                 handler = handlers.get(msg_type)
                 if handler:
-                    await handler(message)
+                    # Execute long-running commands in background to not block other messages
+                    if msg_type in background_handlers:
+                        asyncio.create_task(handler(message))  # noqa: RUF006
+                    else:
+                        await handler(message)
         except websockets.ConnectionClosed:
             logger.warning('WebSocket connection closed')
         except Exception as e:
@@ -285,6 +299,100 @@ class MultiProtocolAgent:
     async def _handle_close_tunnel(self, message: dict) -> None:
         """Handles close_tcp_tunnel message."""
         await self._close_tcp_tunnel(message.get('tunnel_id'))
+
+    async def _handle_execute_command(self, message: dict) -> None:
+        """Handles remote command execution."""
+        command = message.get('command', '')
+        exec_id = message.get('exec_id')
+        client_cn = message.get('client_cn', 'unknown')
+
+        if not command or not exec_id:
+            logger.error('Invalid execute_command message: missing command or exec_id')
+            return
+
+        # Validate command is in whitelist
+        command_parts = command.split()
+        if not command_parts:
+            await self._send_exec_error(exec_id, 'Empty command')
+            return
+
+        base_command = command_parts[0]
+        if base_command not in ALLOWED_COMMANDS:
+            error_msg = f'Command "{base_command}" not allowed. Allowed: {", ".join(ALLOWED_COMMANDS)}'
+            logger.warning(f'Rejected command from {client_cn}: {command}')
+            await self._send_exec_error(exec_id, error_msg)
+            return
+
+        logger.info(f'Executing command from {client_cn}: {command}')
+
+        try:
+            # Execute command with streaming output (non-interactive)
+            process = await asyncio.create_subprocess_shell(
+                command,
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            # Stream stdout and stderr concurrently
+            async def stream_output(stream, stream_type):
+                try:
+                    while True:
+                        line = await stream.readline()
+                        if not line:
+                            break
+                        await self.websocket.send(
+                            json.dumps(
+                                {
+                                    'type': 'exec_output',
+                                    'exec_id': exec_id,
+                                    'stream': stream_type,
+                                    'data': line.decode('utf-8', errors='replace'),
+                                }
+                            )
+                        )
+                except Exception as e:
+                    logger.error(f'Error streaming {stream_type}: {e}')
+
+            # Wait for both streams and process completion
+            await asyncio.gather(
+                stream_output(process.stdout, 'stdout'),
+                stream_output(process.stderr, 'stderr'),
+            )
+
+            exit_code = await process.wait()
+
+            # Send completion message
+            await self.websocket.send(
+                json.dumps(
+                    {
+                        'type': 'exec_complete',
+                        'exec_id': exec_id,
+                        'exit_code': exit_code,
+                    }
+                )
+            )
+
+            logger.info(f'Command completed with exit code {exit_code}: {command}')
+
+        except Exception as e:
+            logger.error(f'Error executing command: {e}')
+            await self._send_exec_error(exec_id, str(e))
+
+    async def _send_exec_error(self, exec_id: str, error_msg: str) -> None:
+        """Sends an execution error message."""
+        try:
+            await self.websocket.send(
+                json.dumps(
+                    {
+                        'type': 'exec_error',
+                        'exec_id': exec_id,
+                        'error': error_msg,
+                    }
+                )
+            )
+        except Exception as e:
+            logger.error(f'Failed to send exec error: {e}')
 
     async def _fetch_relay_assignment(self) -> Optional[str]:
         """Fetches relay server assignment from manager."""
