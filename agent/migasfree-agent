@@ -443,8 +443,7 @@ class MultiProtocolAgent:
     def _connect_websocket(self, connect_kwargs: dict, headers: dict):
         """Connects to WebSocket with version compatibility handling."""
         # Clean up potential conflict
-        if 'additional_headers' in connect_kwargs:
-            del connect_kwargs['additional_headers']
+        connect_kwargs.pop('additional_headers', None)
 
         # Determine correct header argument via strict signature inspection
         # (Version checks are unreliable on some distro packages)
