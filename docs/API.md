@@ -427,7 +427,7 @@ ALLOWED_COMMANDS = ['migasfree']
 
 | Constant             | Value | Description                          |
 |----------------------|-------|--------------------------------------|
-| `RECONNECT_DELAY`    | 5     | Seconds between reconnection attempts |
+| `RECONNECT_DELAY`    | 5     | Seconds between reconnection attempts|
 | `PORT_CHECK_TIMEOUT` | 0.5   | Seconds for port availability check  |
 
 ### Buffer Sizes

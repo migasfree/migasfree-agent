@@ -163,7 +163,7 @@ We follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) with the following 
 | Rule                | Value                  |
 |---------------------|------------------------|
 | Maximum line length | 120 characters         |
-| String quotes       | Single quotes preferred |
+| String quotes       | Single quotes preferred|
 | Indentation         | 4 spaces               |
 | Import order        | isort compatible       |
 
