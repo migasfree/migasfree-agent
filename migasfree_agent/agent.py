@@ -163,6 +163,7 @@ class MultiProtocolAgent:
             'services': self._get_system_info()['services'],
             'mode': 'tcp_tunnel',
         }
+        assert self.websocket is not None
         await self.websocket.send(json.dumps(message))
         logger.info(f'Agent registered: {self.agent_id}')
 
@@ -213,6 +214,7 @@ class MultiProtocolAgent:
                     'origin': 'agent',
                     'data': data.hex(),
                 }
+                assert self.websocket is not None
                 await self.websocket.send(json.dumps(message))
         except Exception as e:
             logger.error(f'Error reading service {service}: {e}')
@@ -264,6 +266,7 @@ class MultiProtocolAgent:
         background_handlers = {'execute_command'}
 
         try:
+            assert self.websocket is not None
             async for message_raw in self.websocket:
                 message = json.loads(message_raw)
                 msg_type = message.get('type')
@@ -355,6 +358,7 @@ class MultiProtocolAgent:
                         line = await stream.readline()
                         if not line:
                             break
+                        assert self.websocket is not None
                         await self.websocket.send(
                             json.dumps(
                                 {
@@ -369,6 +373,8 @@ class MultiProtocolAgent:
                     logger.error(f'Error streaming {stream_type}: {e}')
 
             # Wait for both streams and process completion
+            assert process.stdout is not None
+            assert process.stderr is not None
             await asyncio.gather(
                 stream_output(process.stdout, 'stdout'),
                 stream_output(process.stderr, 'stderr'),
@@ -377,6 +383,7 @@ class MultiProtocolAgent:
             exit_code = await process.wait()
 
             # Send completion message
+            assert self.websocket is not None
             await self.websocket.send(
                 json.dumps(
                     {
@@ -396,6 +403,7 @@ class MultiProtocolAgent:
     async def _send_exec_error(self, exec_id: str, error_msg: str) -> None:
         """Sends an execution error message."""
         try:
+            assert self.websocket is not None
             await self.websocket.send(
                 json.dumps(
                     {
