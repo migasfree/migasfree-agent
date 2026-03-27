@@ -10,6 +10,7 @@ import asyncio
 import json
 import logging
 import os
+import shlex
 import socket
 import ssl
 import sys
@@ -312,7 +313,12 @@ class MultiProtocolAgent:
             return
 
         # Validate command is in whitelist
-        command_parts = command.split()
+        try:
+            command_parts = shlex.split(command)
+        except ValueError as e:
+            await self._send_exec_error(exec_id, f'Invalid command syntax: {e}')
+            return
+
         if not command_parts:
             await self._send_exec_error(exec_id, 'Empty command')
             return
@@ -337,8 +343,9 @@ class MultiProtocolAgent:
             }
 
             # Execute command with streaming output (non-interactive)
-            process = await asyncio.create_subprocess_shell(
-                command,
+            # Use create_subprocess_exec to prevent shell injection
+            process = await asyncio.create_subprocess_exec(
+                *command_parts,
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
