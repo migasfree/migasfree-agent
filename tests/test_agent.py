@@ -3,14 +3,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from migasfree_agent.agent import MultiProtocolAgent, SSLConfig
-
 # Mock dependencies before importing the agent
 sys.modules['websockets'] = MagicMock()
 sys.modules['migasfree_client'] = MagicMock()
 sys.modules['migasfree_client.mtls'] = MagicMock()
 sys.modules['migasfree_client.utils'] = MagicMock()
 sys.modules['requests'] = MagicMock()
+
+from migasfree_agent.agent import MultiProtocolAgent, SSLConfig  # noqa: E402
 
 
 @pytest.fixture
