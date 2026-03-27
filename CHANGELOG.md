@@ -7,67 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added (Unreleased)
+### Changed
 
-- Comprehensive documentation refactoring
-- CONTRIBUTING.md with development guidelines
-- CHANGELOG.md for tracking changes
+- Comprehensive documentation refactoring (Diátaxis format)
+- Updated README and CONTRIBUTING with modern guidelines
+
+## [1.0.8] - 2026-01-20
+
+### Fixed
+
+- WebSocket connection compatibility and async/await usage improvements.
+
+## [1.0.7] - 2025-12-19
+
+### Added
+
+- Forced color output support for remote command execution.
+
+## [1.0.6] - 2025-12-19
+
+### Added
+
+- Remote command execution support via authenticated tunnels.
+
+## [1.0.5] - 2025-12-18
+
+### Changed
+
+- Refactored agent ID types and simplified registration payload.
+
+## [1.0.4] - 2025-12-16
+
+### Fixed
+
+- Resolved agent crashes and improved Python 3.13 compatibility.
+
+## [1.0.3] - 2025-12-16
+
+### Added
+
+- Windows platform packaging support.
+- Added `pyproject.toml` for modern build toolchain.
+
+### Changed
+
+- Adjusted code for strict Python 3.6+ compatibility.
+
+## [1.0.2] - 2025-12-15
+
+### Fixed
+
+- DEB and RPM package build directory structure.
+- Refactored mTLS certificate loading logic.
+
+## [1.0.1] - 2025-12-14
+
+### Changed
+
+- Improved logging by removing redundant timestamps.
+
+## [1.0.0] - 2025-12-14
+
+### Added
+
+- Initial release of Migasfree Agent.
+- Multi-protocol TCP tunnel support (SSH, VNC, RDP).
+- mTLS authentication and WebSocket-based encryption.
+- Multi-platform support (Linux and Windows).
 
 ---
 
-## [1.0.0] - 2024-01-01
-
-### Added (1.0.0)
-
-- Initial release of Migasfree Agent
-- Multi-protocol TCP tunnel support (SSH, VNC, RDP)
-- WebSocket-based tunneling for firewall traversal
-- mTLS authentication for secure communication
-- Cross-platform support (Linux and Windows)
-- Automatic reconnection with configurable delays
-- Remote command execution with whitelist protection
-- systemd service integration for Linux
-- NSSM service support for Windows
-- `.deb` and `.rpm` package build scripts
-- Windows ZIP package build script
-- GitHub Actions CI/CD workflow
-
-### Security
-
-- Implemented mutual TLS (mTLS) for all connections
-- Command execution whitelist to prevent unauthorized commands
-- Secure WebSocket (WSS) connections enforced
-
-### Technical Details
-
-- Python 3.6+ compatibility with dataclasses backport
-- Async/await architecture using asyncio
-- Configurable WebSocket parameters (ping interval, timeouts)
-- Hexadecimal encoding for binary tunnel data
-
----
-
-## Version History Quick Reference
-
-| Version | Date       | Highlights                              |
-|---------|------------|-----------------------------------------|
-| 1.0.0   | 2024-01-01 | Initial release with full tunnel support|
-
----
-
-## Upgrade Notes
-
-### Upgrading to 1.0.0
-
-This is the initial release. No upgrade path required.
-
----
-
-## Links
-
-- [Repository](https://github.com/migasfree/migasfree-agent/)
-- [Issues](https://github.com/migasfree/migasfree-agent/issues)
-- [Releases](https://github.com/migasfree/migasfree-agent/releases)
-
-[Unreleased]: https://github.com/migasfree/migasfree-agent/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/migasfree/migasfree-agent/compare/1.0.8...HEAD
+[1.0.8]: https://github.com/migasfree/migasfree-agent/compare/1.0.7...1.0.8
+[1.0.7]: https://github.com/migasfree/migasfree-agent/compare/1.0.6...1.0.7
+[1.0.6]: https://github.com/migasfree/migasfree-agent/compare/1.0.5...1.0.6
+[1.0.5]: https://github.com/migasfree/migasfree-agent/compare/1.0.4...1.0.5
+[1.0.4]: https://github.com/migasfree/migasfree-agent/compare/1.0.3...1.0.4
+[1.0.3]: https://github.com/migasfree/migasfree-agent/compare/1.0.2...1.0.3
+[1.0.2]: https://github.com/migasfree/migasfree-agent/compare/1.0.1...1.0.2
+[1.0.1]: https://github.com/migasfree/migasfree-agent/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/migasfree/migasfree-agent/releases/tag/1.0.0
