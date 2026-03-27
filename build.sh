@@ -17,7 +17,7 @@ sed -i "s/^Version: .*/Version: $VERSION/" $DEB_DIR/DEBIAN/control
 echo "--- Building DEB Package ---"
 # Copy files to structure
 mkdir -p $DEB_DIR/usr/bin
-cp agent/migasfree-agent $DEB_DIR/usr/bin/migasfree-agent
+cp migasfree_agent/agent.py $DEB_DIR/usr/bin/migasfree-agent
 chmod 755 $DEB_DIR/usr/bin/migasfree-agent
 
 # Build
@@ -31,7 +31,7 @@ if command -v rpmbuild >/dev/null 2>&1; then
     mkdir -p $RPM_DIR/{SOURCES,BUILD,RPMS,SRPMS}
 
     # Copy sources
-    cp agent/migasfree-agent $RPM_DIR/SOURCES/migasfree-agent
+    cp migasfree_agent/agent.py $RPM_DIR/SOURCES/migasfree-agent
     cp $DEB_DIR/lib/systemd/system/migasfree-agent.service $RPM_DIR/SOURCES/
 
     # Build

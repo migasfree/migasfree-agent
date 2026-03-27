@@ -17,12 +17,12 @@
 Always use a virtual environment (e.g., `.venv`).
 
 - **Install Dependencies**: `pip install -e .[dev]`
-- **Run Agent (Local)**: `python agent/migasfree-agent`
+- **Run Agent (Local)**: `python migasfree_agent/agent.py`
 - **Build Packages (Linux)**: `./build.sh`
 - **Build Package (Windows)**: `build.bat`
-- **Lint Code**: `ruff check agent/`
-- **Type Check**: `mypy agent/`
-- **Format Code**: `ruff format agent/`
+- **Lint Code**: `ruff check migasfree_agent/`
+- **Type Check**: `mypy migasfree_agent/`
+- **Format Code**: `ruff format migasfree_agent/`
 
 ## 3. Code Style & Conventions
 
@@ -34,8 +34,8 @@ Always use a virtual environment (e.g., `.venv`).
 
 ## 4. Architecture Standards
 
-- **`agent/`**: Contains the main agent script.
-  - **Discrepancy Note**: The file `agent/migasfree-agent` is the primary executable. Do not confuse it with the `migasfree_agent` package name used in `pyproject.toml`.
+- **`migasfree_agent/`**: Contains the main agent package.
+  - The logic is in `migasfree_agent/agent.py`.
 - **`packaging/`**: Contains platform-specific service descriptors and installer scripts.
 - **`docs/`**: Architecture and API documentation.
 

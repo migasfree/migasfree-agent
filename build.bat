@@ -26,7 +26,7 @@ if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
 mkdir "%BUILD_DIR%"
 
 echo [1/4] Copying agent script...
-copy /Y "agent\migasfree-agent" "%BUILD_DIR%\migasfree-agent" >nul
+copy /Y "migasfree_agent\agent.py" "%BUILD_DIR%\migasfree-agent" >nul
 if %errorlevel% neq 0 (
     echo ERROR: Failed to copy agent script.
     exit /b 1

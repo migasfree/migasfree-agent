@@ -153,7 +153,7 @@ install.bat
 
    ```cmd
    mkdir "%PROGRAMDATA%\migasfree-agent"
-   copy agent\migasfree-agent "%PROGRAMDATA%\migasfree-agent\"
+   copy migasfree_agent\agent.py "%PROGRAMDATA%\migasfree-agent\migasfree-agent"
    ```
 
 3. **Create Windows service using NSSM:**
@@ -357,10 +357,10 @@ source venv/bin/activate  # Linux
 pip install -e ".[dev]"
 
 # Run linting
-ruff check agent/
+ruff check migasfree_agent/
 
 # Run type checking
-mypy agent/
+mypy migasfree_agent/
 ```
 
 ---
@@ -455,7 +455,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make your changes
-4. Run linting: `ruff check agent/`
+4. Run linting: `ruff check migasfree_agent/`
 5. Commit your changes: `git commit -m 'Add amazing feature'`
 6. Push to the branch: `git push origin feature/amazing-feature`
 7. Open a Pull Request
