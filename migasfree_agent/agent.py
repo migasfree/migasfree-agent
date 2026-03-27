@@ -17,12 +17,8 @@ import sys
 import time
 import uuid
 from contextlib import suppress
-
-try:
-    from dataclasses import dataclass, field
-except ImportError:
-    from dataclasses import dataclass, field  # backport: pip install dataclasses
-from typing import Dict, Optional
+from dataclasses import dataclass, field  # stdlib 3.7+; backport: pip install dataclasses
+from typing import Any, Dict, Optional, Tuple
 
 import requests
 import websockets
@@ -85,7 +81,7 @@ class SSLConfig:
     ca_file: str = field(init=False)
     context: ssl.SSLContext = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.key_file = get_mtls_key_file(self.fqdn)
         self.cert_file = get_mtls_cert_file(self.fqdn)
         self.ca_file = get_mtls_ca_file(self.fqdn)
@@ -131,7 +127,7 @@ class MultiProtocolAgent:
         self.hostname = socket.gethostname()
         self.services = services or DEFAULT_SERVICES.copy()
         self.tcp_tunnels: Dict[str, TunnelInfo] = {}
-        self.websocket: Optional[websockets.WebSocketClientProtocol] = None
+        self.websocket: Optional[Any] = None  # websockets.WebSocketClientProtocol (no stubs)
 
     def _is_port_open(self, port: int) -> bool:
         """Checks if a port is open on localhost."""
@@ -286,21 +282,21 @@ class MultiProtocolAgent:
     async def _handle_start_tunnel(self, message: dict) -> None:
         """Handles start_tcp_tunnel message."""
         await self._handle_tcp_tunnel(
-            message.get('tunnel_id'),
-            message.get('service', 'ssh'),
+            str(message.get('tunnel_id', '')),
+            str(message.get('service', 'ssh')),
             message.get('client_cn'),
         )
 
     async def _handle_tunnel_data(self, message: dict) -> None:
         """Handles tunnel_data message."""
         await self._write_tcp_tunnel(
-            message.get('tunnel_id'),
-            message.get('data'),
+            str(message.get('tunnel_id', '')),
+            str(message.get('data', '')),
         )
 
     async def _handle_close_tunnel(self, message: dict) -> None:
         """Handles close_tcp_tunnel message."""
-        await self._close_tcp_tunnel(message.get('tunnel_id'))
+        await self._close_tcp_tunnel(str(message.get('tunnel_id', '')))
 
     async def _handle_execute_command(self, message: dict) -> None:
         """Handles remote command execution."""
@@ -353,7 +349,7 @@ class MultiProtocolAgent:
             )
 
             # Stream stdout and stderr concurrently
-            async def stream_output(stream, stream_type):
+            async def stream_output(stream: asyncio.StreamReader, stream_type: str) -> None:
                 try:
                     while True:
                         line = await stream.readline()
@@ -416,7 +412,7 @@ class MultiProtocolAgent:
         """Fetches relay server assignment from manager."""
         logger.info(f'Contacting Manager at {self.manager_url}')
 
-        def do_request():
+        def do_request() -> requests.Response:
             return requests.post(
                 f'{self.manager_url}/register',
                 json={
@@ -433,21 +429,21 @@ class MultiProtocolAgent:
             loop = asyncio.get_event_loop()
             resp = await loop.run_in_executor(None, do_request)
             resp.raise_for_status()
-            return resp.json()['relay']
+            return str(resp.json()['relay'])
         except requests.RequestException as e:
             logger.error(f'Manager error: {e}')
             return None
 
     def _build_connect_kwargs(self, headers: dict) -> dict:
         """Builds WebSocket connection kwargs."""
-        kwargs = WEBSOCKET_CONFIG.copy()
+        kwargs: Dict[str, Any] = dict(WEBSOCKET_CONFIG)
 
-        if self.server_url.startswith('wss://'):
+        if self.server_url and self.server_url.startswith('wss://'):
             kwargs['ssl'] = self.ssl_config.context
 
         return kwargs
 
-    def _connect_websocket(self, connect_kwargs: dict, headers: dict):
+    def _connect_websocket(self, connect_kwargs: dict, headers: dict) -> Any:
         """Connects to WebSocket with version compatibility handling."""
         # Clean up potential conflict
         connect_kwargs.pop('additional_headers', None)
@@ -467,10 +463,11 @@ class MultiProtocolAgent:
                 if int(websockets.__version__.split('.')[0]) >= 10:
                     use_additional_headers = True
 
+        server_url: str = self.server_url or ''
         if use_additional_headers:
-            return websockets.connect(self.server_url, additional_headers=headers, **connect_kwargs)
+            return websockets.connect(server_url, additional_headers=headers, **connect_kwargs)
         else:
-            return websockets.connect(self.server_url, extra_headers=headers, **connect_kwargs)
+            return websockets.connect(server_url, extra_headers=headers, **connect_kwargs)
 
     async def connect(self) -> None:
         """Main connection loop with automatic reconnection."""
@@ -501,16 +498,16 @@ class MultiProtocolAgent:
                 await asyncio.sleep(RECONNECT_DELAY)
 
 
-def load_agent_config() -> tuple[str, str]:
+def load_agent_config() -> Tuple[int, str]:
     """Loads agent configuration from traits file."""
     with open(EVENTS_JSON_FILE) as f:
         traits = json.load(f)
     agent_id = int(traits['after']['CID'][0])
-    project = traits['after']['PRJ'][0]
+    project = str(traits['after']['PRJ'][0])
     return agent_id, project
 
 
-async def main():
+async def main() -> None:
     """Main entry point."""
     fqdn = get_config(settings.CONF_FILE, 'client').get('server', 'localhost')
     ssl_config = SSLConfig(fqdn)
