@@ -35,27 +35,6 @@ jobs:
     - name: Type check with Mypy
       run: mypy migasfree_agent/
 
-  test-legacy:
-    needs: lint-and-type-check
-    runs-on: ubuntu-latest
-    container: python:3.6-slim
-    steps:
-    - name: Install git
-      run: |
-        apt-get update
-        apt-get install -y git
-    
-    - uses: actions/checkout@v6
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install git+https://github.com/migasfree/migasfree-client.git@REST-API
-        pip install -e ".[dev]"
-
-    - name: Run Tests
-      run: pytest tests/
-
   test:
     needs: lint-and-type-check
     strategy:
@@ -83,8 +62,8 @@ jobs:
     - name: Run Tests
       run: pytest tests/
 
-  build:
-    needs: [test, test-legacy]
+  build-linux:
+    needs: test
     if: startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[build]')
     runs-on: ubuntu-latest
     steps:
@@ -95,7 +74,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y rpm
 
-    - name: Build Package
+    - name: Build Packages (DEB & RPM)
       run: |
         chmod +x build.sh
         if [[ $GITHUB_REF == refs/tags/* ]]; then
@@ -106,8 +85,67 @@ jobs:
           ./build.sh
         fi
 
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v6
+    - name: Upload Linux Artifacts
+      uses: actions/upload-artifact@v7
       with:
-        name: packages
+        name: packages-linux
         path: dist/
+
+  build-windows:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[build]')
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Build Windows Package (ZIP)
+      shell: pwsh
+      run: |
+        if ($env:GITHUB_REF -like "refs/tags/*") {
+          $VERSION = $env:GITHUB_REF.Replace('refs/tags/', '')
+          echo "Building version $VERSION"
+          .\build.bat $VERSION
+        } else {
+          .\build.bat
+        }
+
+    - name: Upload Windows Artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: packages-windows
+        path: dist/*.zip
+
+  release:
+    name: Create GitHub Release
+    needs: [build-linux, build-windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Download Linux Artifacts
+      uses: actions/download-artifact@v7
+      with:
+        name: packages-linux
+        path: release-assets/
+
+    - name: Download Windows Artifacts
+      uses: actions/download-artifact@v7
+      with:
+        name: packages-windows
+        path: release-assets/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          release-assets/*.deb
+          release-assets/*.rpm
+          release-assets/*.zip
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
