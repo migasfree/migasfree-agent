@@ -51,18 +51,40 @@ mypy migasfree_agent/
 
 ## 🏗️ Build System
 
+### Centralized Versioning
+
+The project version is centrally defined in `pyproject.toml`. This is the single source of truth for:
+
+- Python packaging (`pip`).
+- Linux packages (`.deb`, `.rpm`).
+- Windows distributables (`.zip`).
+
+To update the version, modify the `version` field in `[project]` section of `pyproject.toml`.
+
 ### Generating Packages
 
-The `build.sh` script automates the creation of Linux packages.
+The build scripts automate the creation of distributable packages by extracting the version directly from `pyproject.toml`.
+
+#### Linux (Debian & RPM)
 
 ```bash
-./build.sh [VERSION]
+./build.sh [OVERRIDE_VERSION]
 ```
 
 This generates:
 
 - `dist/migasfree-agent_VERSION_all.deb`
 - `dist/migasfree-agent-VERSION-1.noarch.rpm`
+
+#### Windows (ZIP Bundle)
+
+```powershell
+.\build.bat [OVERRIDE_VERSION]
+```
+
+This generates:
+
+- `dist/migasfree-agent-VERSION-windows.zip`
 
 ---
 

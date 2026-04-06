@@ -6,6 +6,13 @@ setlocal EnableDelayedExpansion
 
 set "PROJECT_ROOT=%~dp0"
 set "VERSION=%~1"
+if "%VERSION%"=="" (
+    for /f "tokens=2 delims==" %%I in ('findstr /b "version =" pyproject.toml') do (
+        set "VERSION=%%I"
+        set "VERSION=!VERSION: =!"
+        set "VERSION=!VERSION:"=!"
+    )
+)
 if "%VERSION%"=="" set "VERSION=1.0.0"
 
 set "WIN_DIR=packaging\windows"

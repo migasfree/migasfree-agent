@@ -2,7 +2,7 @@
 set -e
 
 PROJECT_ROOT=$(pwd)
-VERSION=${1:-"1.0.0"}
+VERSION=${1:-$(grep -m 1 "^version[[:space:]]*=[[:space:]]*" pyproject.toml | sed 's/version[[:space:]]*=[[:space:]]*"\(.*\)"/\1/')}
 DEB_DIR="packaging/deb"
 RPM_DIR="packaging/rpm"
 DIST_DIR="dist"
