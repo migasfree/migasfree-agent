@@ -35,23 +35,35 @@ jobs:
     - name: Type check with Mypy
       run: mypy migasfree_agent/
 
+  test-legacy:
+    needs: lint-and-type-check
+    runs-on: ubuntu-latest
+    container: python:3.6-slim
+    steps:
+    - name: Install git
+      run: |
+        apt-get update
+        apt-get install -y git
+    
+    - uses: actions/checkout@v6
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install git+https://github.com/migasfree/migasfree-client.git@REST-API
+        pip install -e ".[dev]"
+
+    - name: Run Tests
+      run: pytest tests/
+
   test:
     needs: lint-and-type-check
     strategy:
       matrix:
-        python-version: ["3.6", "3.8", "3.10", "3.12"]
-        include:
-          - python-version: "3.6"
-            os: ubuntu-20.04
-          - python-version: "3.8"
-            os: ubuntu-latest
-          - python-version: "3.10"
-            os: ubuntu-latest
-          - python-version: "3.12"
-            os: ubuntu-latest
+        python-version: ["3.8", "3.10", "3.12"]
       fail-fast: false
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v6
@@ -72,7 +84,7 @@ jobs:
       run: pytest tests/
 
   build:
-    needs: test
+    needs: [test, test-legacy]
     if: startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[build]')
     runs-on: ubuntu-latest
     steps:
