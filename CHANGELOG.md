@@ -7,10 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.9] - 2026-04-06
+
+### Security
+
+- **Critical**: Improved security in remote command execution by replacing shell execution with strict `asyncio.create_subprocess_exec` and argument sanitization to prevent command injection.
+
+### Added
+
+- Comprehensive automated test suite with unit tests for agent logic and security.
+- Major CI/CD pipeline overhaul using GitHub Actions with matrix testing (Python 3.6 - 3.13), linting, and type checking.
+- Synchronized build system for Linux and Windows with automatic version extraction from `pyproject.toml`.
+- Standardized `.vscode/settings.json` to resolve python interpreter issues across environments.
+
+### Fixed
+
+- Resolved multiple Mypy type-checking errors and improved overall type safety with explicit type guards.
+- Fixed CI runner compatibility for legacy Python 3.6 environments.
+
 ### Changed
 
-- Comprehensive documentation refactoring (Diátaxis format)
-- Updated README and CONTRIBUTING with modern guidelines
+- Comprehensive documentation refactoring following the Diátaxis framework.
+- Aligned project internal structure with `pyproject.toml` naming standards.
+- Improved build consistency for DEB, RPM, and Windows distributions.
 
 ## [1.0.8] - 2026-01-20
 
@@ -77,7 +96,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/migasfree/migasfree-agent/compare/1.0.8...HEAD
+[Unreleased]: https://github.com/migasfree/migasfree-agent/compare/1.0.9...HEAD
+[1.0.9]: https://github.com/migasfree/migasfree-agent/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/migasfree/migasfree-agent/compare/1.0.7...1.0.8
 [1.0.7]: https://github.com/migasfree/migasfree-agent/compare/1.0.6...1.0.7
 [1.0.6]: https://github.com/migasfree/migasfree-agent/compare/1.0.5...1.0.6
