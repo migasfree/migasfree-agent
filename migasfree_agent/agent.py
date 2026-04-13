@@ -92,7 +92,7 @@ class SSLConfig:
         # Force TLSv1.2 or higher for maximum compatibility with HAProxy mTLS
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-        ctx.check_hostname = False # We verify via mTLS certificates
+        ctx.check_hostname = False  # We verify via mTLS certificates
         ctx.verify_mode = ssl.CERT_REQUIRED
 
         try:
