@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.10] - 2026-04-13
+
+### Fixed
+
+- **Critical**: Refactored SSL context in WebSocket connections to improve mTLS compatibility with HAProxy, forcing TLSv1.2+ and refining certificate verification to prevent handshake failures in zero-trust environments.
+- Improved connection resilience by optimizing internal routing handled by the agent during tunnel establishment.
 
 ## [1.0.9] - 2026-04-06
 
@@ -96,7 +101,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/migasfree/migasfree-agent/compare/1.0.9...HEAD
+[Unreleased]: https://github.com/migasfree/migasfree-agent/compare/1.0.10...HEAD
+[1.0.10]: https://github.com/migasfree/migasfree-agent/compare/1.0.9...1.0.10
 [1.0.9]: https://github.com/migasfree/migasfree-agent/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/migasfree/migasfree-agent/compare/1.0.7...1.0.8
 [1.0.7]: https://github.com/migasfree/migasfree-agent/compare/1.0.6...1.0.7
