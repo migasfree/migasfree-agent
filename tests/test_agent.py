@@ -8,6 +8,8 @@ sys.modules['websockets'] = MagicMock()
 sys.modules['migasfree_client'] = MagicMock()
 sys.modules['migasfree_client.mtls'] = MagicMock()
 sys.modules['migasfree_client.utils'] = MagicMock()
+
+
 class MockHTTPAdapter:
     def __init__(self, *args, **kwargs):
         pass
