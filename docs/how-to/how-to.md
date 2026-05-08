@@ -110,3 +110,5 @@ build.bat 1.2.0
 | **"No relay assigned"** | Manager server | Verify the Manager has available Relays. |
 | **"VNC port closed"** | Local service | Ensure `vnc-server` is running on :5900. |
 | **"Python 3.6 error"** | Dependencies | Ensure `dataclasses` backport is installed. |
+| **"Error connecting to local service exec: [WinError 10049]"** | Windows Port 0 | Harmless. Windows considers port 0 invalid for TCP. Exec commands use WebSocket directly. |
+| **"Command completed with exit code 1: migasfree sync"** | Administrator privileges | Run manual commands from an **Elevated Command Prompt** or deploy as an **NSSM Windows Service**. |
