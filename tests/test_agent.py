@@ -8,7 +8,15 @@ sys.modules['websockets'] = MagicMock()
 sys.modules['migasfree_client'] = MagicMock()
 sys.modules['migasfree_client.mtls'] = MagicMock()
 sys.modules['migasfree_client.utils'] = MagicMock()
-sys.modules['requests'] = MagicMock()
+class MockHTTPAdapter:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+mock_requests = MagicMock()
+mock_requests.adapters = MagicMock()
+mock_requests.adapters.HTTPAdapter = MockHTTPAdapter
+sys.modules['requests'] = mock_requests
 
 from migasfree_agent.agent import MultiProtocolAgent, SSLConfig  # noqa: E402
 
@@ -119,13 +127,13 @@ class TestAgentGeneral:
         mock_response.json.return_value = {'relay': 'wss://relay.example/agent'}
         mock_response.raise_for_status = MagicMock()
 
-        # agent._fetch_relay_assignment uses loop.run_in_executor for requests.post
-        with patch('requests.post', return_value=mock_response) as mock_post:
-            relay_url = await agent._fetch_relay_assignment()
+        # Mock the session post call
+        agent.session.post = MagicMock(return_value=mock_response)
+        relay_url = await agent._fetch_relay_assignment()
 
-            assert relay_url == 'wss://relay.example/agent'
-            mock_post.assert_called_once()
-            # Verify it uses certificates
-            kwargs = mock_post.call_args[1]
-            assert 'cert' in kwargs
-            assert 'verify' in kwargs
+        assert relay_url == 'wss://relay.example/agent'
+        agent.session.post.assert_called_once()
+        # Verify it uses certificates
+        kwargs = agent.session.post.call_args[1]
+        assert 'cert' in kwargs
+        assert 'verify' in kwargs

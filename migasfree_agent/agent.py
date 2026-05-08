@@ -59,6 +59,28 @@ WEBSOCKET_CONFIG = {
 }
 
 
+class StrictSSLCompatAdapter(requests.adapters.HTTPAdapter):
+    """Custom HTTPAdapter that disables strict SSL verification in modern Python versions (e.g., Python 3.13+)."""
+
+    def init_poolmanager(self, connections, maxsize, block=False, **kwargs):
+        context = ssl.create_default_context()
+        if hasattr(ssl, 'VERIFY_X509_STRICT'):
+            context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+        if hasattr(ssl, 'VERIFY_X509_PARTIAL_CHAIN'):
+            context.verify_flags &= ~ssl.VERIFY_X509_PARTIAL_CHAIN
+        kwargs['ssl_context'] = context
+        return super().init_poolmanager(connections, maxsize, block=block, **kwargs)
+
+    def proxy_manager_for(self, proxy, **kwargs):
+        context = ssl.create_default_context()
+        if hasattr(ssl, 'VERIFY_X509_STRICT'):
+            context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+        if hasattr(ssl, 'VERIFY_X509_PARTIAL_CHAIN'):
+            context.verify_flags &= ~ssl.VERIFY_X509_PARTIAL_CHAIN
+        kwargs['ssl_context'] = context
+        return super().proxy_manager_for(proxy, **kwargs)
+
+
 @dataclass
 class TunnelInfo:
     """Stores information about an active tunnel."""
@@ -94,6 +116,10 @@ class SSLConfig:
         ctx.minimum_version = ssl.TLSVersion.TLSv1_2
         ctx.check_hostname = False  # We verify via mTLS certificates
         ctx.verify_mode = ssl.CERT_REQUIRED
+        if hasattr(ssl, 'VERIFY_X509_STRICT'):
+            ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+        if hasattr(ssl, 'VERIFY_X509_PARTIAL_CHAIN'):
+            ctx.verify_flags &= ~ssl.VERIFY_X509_PARTIAL_CHAIN
 
         try:
             ctx.load_verify_locations(cafile=self.ca_file)
@@ -133,6 +159,10 @@ class MultiProtocolAgent:
         self.services = services or DEFAULT_SERVICES.copy()
         self.tcp_tunnels: Dict[str, TunnelInfo] = {}
         self.websocket: Optional[Any] = None  # websockets.WebSocketClientProtocol (no stubs)
+        self.session = requests.Session()
+        adapter = StrictSSLCompatAdapter()
+        self.session.mount('https://', adapter)
+        self.session.mount('http://', adapter)
 
     def _is_port_open(self, port: int) -> bool:
         """Checks if a port is open on localhost."""
@@ -426,7 +456,7 @@ class MultiProtocolAgent:
         logger.info(f'Contacting Manager at {self.manager_url}')
 
         def do_request() -> requests.Response:
-            return requests.post(
+            return self.session.post(
                 f'{self.manager_url}/register',
                 json={
                     'id': self.agent_id,
