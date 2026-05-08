@@ -62,7 +62,9 @@ WEBSOCKET_CONFIG = {
 class StrictSSLCompatAdapter(requests.adapters.HTTPAdapter):
     """Custom HTTPAdapter that disables strict SSL verification in modern Python versions (e.g., Python 3.13+)."""
 
-    def init_poolmanager(self, connections, maxsize, block=False, **kwargs):
+    def init_poolmanager(
+        self, connections: int, maxsize: int, block: bool = False, **kwargs: Any
+    ) -> Any:
         context = ssl.create_default_context()
         if hasattr(ssl, 'VERIFY_X509_STRICT'):
             context.verify_flags &= ~ssl.VERIFY_X509_STRICT
@@ -71,7 +73,7 @@ class StrictSSLCompatAdapter(requests.adapters.HTTPAdapter):
         kwargs['ssl_context'] = context
         return super().init_poolmanager(connections, maxsize, block=block, **kwargs)
 
-    def proxy_manager_for(self, proxy, **kwargs):
+    def proxy_manager_for(self, proxy: str, **kwargs: Any) -> Any:
         context = ssl.create_default_context()
         if hasattr(ssl, 'VERIFY_X509_STRICT'):
             context.verify_flags &= ~ssl.VERIFY_X509_STRICT
