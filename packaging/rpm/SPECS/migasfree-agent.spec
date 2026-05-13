@@ -35,13 +35,30 @@ install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/lib/systemd/system/migasfree-agent.ser
 /lib/systemd/system/migasfree-agent.service
 
 %post
-%systemd_post migasfree-agent.service
+# Environment check: Skip if systemd is not active (e.g., during docker build)
+if [ ! -d /run/systemd/system ]; then
+    systemctl enable migasfree-agent >/dev/null 2>&1 || :
+    echo "Container environment detected: skipping"
+else
+    systemctl daemon-reload >/dev/null 2>&1 || :
+    if systemctl is-enabled migasfree-agent >/dev/null 2>&1; then
+        systemctl restart migasfree-agent >/dev/null 2>&1 || :
+    else
+        systemctl start migasfree-agent >/dev/null 2>&1 || :
+    fi
+fi
 
 %preun
-%systemd_preun migasfree-agent.service
+if [ $1 -eq 0 ] && [ -d /run/systemd/system ]; then
+    # Package removal, not upgrade
+    systemctl stop migasfree-agent >/dev/null 2>&1 || :
+    systemctl disable migasfree-agent >/dev/null 2>&1 || :
+fi
 
 %postun
-%systemd_postun_with_restart migasfree-agent.service
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload >/dev/null 2>&1 || :
+fi
 
 %changelog
 * Sat Dec 14 2024 Your Name <your.email@example.com> - 1.0.0-1
