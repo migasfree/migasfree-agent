@@ -154,7 +154,7 @@ class MultiProtocolAgent:
         self.manager_url = manager_url.rstrip('/')
         self.ssl_config = ssl_config
         self.server_url: Optional[str] = None
-        self.agent_id = agent_id or str(uuid.uuid4())
+        self.agent_id = agent_id if agent_id is not None else str(uuid.uuid4())
         self.project = project or 'Unknown'
         self.hostname = socket.gethostname()
         self.services = services or DEFAULT_SERVICES.copy()
