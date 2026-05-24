@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.12] - 2026-05-24
+
+### Added
+
+- Added Windows-specific troubleshooting notes regarding execution and privilege management.
+
+### Changed
+
+- Harmonized post-installation scripts for Debian (`.deb`) and RedHat (`.rpm`) packages, improving systemd configuration behavior in containerized environments.
+
+### Fixed
+
+- **Critical**: Resolved an issue where configuring a scheme (like `https://`) in the `Server` parameter caused mTLS CA/certificate lookup paths to point to invalid directories (such as `https:/migasfree.es`) and led to double-scheme API URLs (`https://https://...`). The agent now parses the server URL cleanly using `urllib.parse.urlparse`.
+- Explicitly imported `requests.adapters` to satisfy static analysis and updated unit tests to mock the adapters submodule in `sys.modules`.
+
+## [1.0.11] - 2026-05-08
+
+### Added
+
+- Integrated `pre-commit` hooks for Ruff and Mypy.
+
+### Fixed
+
+- Resolved multiple static analysis and type safety warnings, including proper type annotations for `init_poolmanager` and `proxy_manager_for` in `StrictSSLCompatAdapter`.
+- Resolved CI deprecation warning by upgrading the mypy target python_version to 3.10.
+
+### Style
+
+- Standardized Ruff formatting for the `init_poolmanager` function signature in `agent.py`.
+
 ## [1.0.10] - 2026-04-13
 
 ### Fixed
@@ -101,7 +131,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/migasfree/migasfree-agent/compare/1.0.10...HEAD
 [1.0.10]: https://github.com/migasfree/migasfree-agent/compare/1.0.9...1.0.10
 [1.0.9]: https://github.com/migasfree/migasfree-agent/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/migasfree/migasfree-agent/compare/1.0.7...1.0.8

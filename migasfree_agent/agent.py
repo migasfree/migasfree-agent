@@ -21,6 +21,7 @@ from dataclasses import dataclass, field  # stdlib 3.7+; backport: pip install d
 from typing import Any, Dict, Optional, Tuple
 
 import requests
+import requests.adapters
 import websockets
 from migasfree_client import settings
 from migasfree_client.mtls import (
@@ -552,9 +553,21 @@ def load_agent_config() -> Tuple[int, str]:
 
 async def main() -> None:
     """Main entry point."""
-    fqdn = get_config(settings.CONF_FILE, 'client').get('server', 'localhost')
+    server = get_config(settings.CONF_FILE, 'client').get('server', 'localhost')
+    if '://' not in server:
+        server = f'https://{server}'
+
+    from urllib.parse import urlparse
+
+    parsed = urlparse(server)
+    fqdn = parsed.hostname or 'localhost'
+    port = parsed.port
+    protocol = parsed.scheme or 'https'
+
+    port_str = f':{port}' if port else ''
+    manager_url = f'{protocol}://{fqdn}{port_str}/manager/v1/private/tunnel'
+
     ssl_config = SSLConfig(fqdn)
-    manager_url = f'https://{fqdn}/manager/v1/private/tunnel'
 
     agent_id, project = load_agent_config()
 

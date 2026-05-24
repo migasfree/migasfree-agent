@@ -19,6 +19,7 @@ mock_requests = MagicMock()
 mock_requests.adapters = MagicMock()
 mock_requests.adapters.HTTPAdapter = MockHTTPAdapter
 sys.modules['requests'] = mock_requests
+sys.modules['requests.adapters'] = mock_requests.adapters
 
 from migasfree_agent.agent import MultiProtocolAgent, SSLConfig  # noqa: E402
 
