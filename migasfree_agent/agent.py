@@ -543,7 +543,10 @@ def load_migasfree_config() -> dict:
             text=True,
             check=True,
         )
-        return json.loads(result.stdout)
+        config = json.loads(result.stdout)
+        if isinstance(config, dict):
+            return config
+        raise ValueError('Invalid JSON structure returned by migasfree conf.')
     except Exception as e:
         logger.error(f'Failed to get configuration from migasfree: {e}')
         raise RuntimeError('migasfree command is not available or failed to execute.') from e
