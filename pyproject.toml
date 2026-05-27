@@ -87,6 +87,7 @@ select = [
 ignore = [
     "E501",   # line too long (handled by formatter)
     "UP007",  # use X | None instead of Optional[X] (keep Optional for 3.8 compat)
+    "UP022",  # prefer capture_output (disabled to preserve Python 3.6 compatibility)
 ]
 
 [tool.ruff.format]

@@ -18,7 +18,7 @@ import time
 import uuid
 from contextlib import suppress
 from dataclasses import dataclass, field  # stdlib 3.7+; backport: pip install dataclasses
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import requests
 import requests.adapters
