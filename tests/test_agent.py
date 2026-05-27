@@ -5,9 +5,6 @@ import pytest
 
 # Mock dependencies before importing the agent
 sys.modules['websockets'] = MagicMock()
-sys.modules['migasfree_client'] = MagicMock()
-sys.modules['migasfree_client.mtls'] = MagicMock()
-sys.modules['migasfree_client.utils'] = MagicMock()
 
 
 class MockHTTPAdapter:
@@ -26,12 +23,12 @@ from migasfree_agent.agent import MultiProtocolAgent, SSLConfig  # noqa: E402
 
 @pytest.fixture
 def mock_ssl_config():
-    with patch('migasfree_agent.agent.get_mtls_key_file', return_value='/tmp/key'), patch(
-        'migasfree_agent.agent.get_mtls_cert_file', return_value='/tmp/cert'
-    ), patch('migasfree_agent.agent.get_mtls_ca_file', return_value='/tmp/ca'), patch(
-        'ssl.create_default_context', return_value=MagicMock()
-    ):
-        yield SSLConfig('localhost')
+    return SSLConfig(
+        fqdn='localhost',
+        ca_file='/tmp/ca',
+        cert_file='/tmp/cert',
+        key_file='/tmp/key',
+    )
 
 
 @pytest.fixture

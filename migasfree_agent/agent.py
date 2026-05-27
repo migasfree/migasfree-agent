@@ -7,18 +7,21 @@ enabling remote access to local services through mTLS authentication.
 """
 
 import asyncio
+import inspect
 import json
 import logging
 import os
 import shlex
 import socket
 import ssl
+import subprocess
 import sys
 import time
 import uuid
 from contextlib import suppress
 from dataclasses import dataclass, field  # stdlib 3.7+; backport: pip install dataclasses
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
+from urllib.parse import urlparse
 
 import requests
 import requests.adapters
@@ -103,7 +106,11 @@ class SSLConfig:
         """Creates and configures SSL context."""
         # Force TLSv1.2 or higher for maximum compatibility with HAProxy mTLS
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        if hasattr(ssl, 'TLSVersion'):
+            ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        else:
+            # Fallback for Python 3.6 which lacks TLSVersion attribute
+            ctx.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
         ctx.check_hostname = False  # We verify via mTLS certificates
         ctx.verify_mode = ssl.CERT_REQUIRED
         if hasattr(ssl, 'VERIFY_X509_STRICT'):
@@ -153,6 +160,7 @@ class MultiProtocolAgent:
         adapter = StrictSSLCompatAdapter()
         self.session.mount('https://', adapter)
         self.session.mount('http://', adapter)
+        self.background_tasks: Set[asyncio.Task] = set()
 
     def _is_port_open(self, port: int) -> bool:
         """Checks if a port is open on localhost."""
@@ -216,7 +224,9 @@ class MultiProtocolAgent:
                 start_time=time.time(),
                 client_cn=client_cn,
             )
-            asyncio.create_task(self._forward_service_to_ws(tunnel_id, reader, service))  # noqa: RUF006
+            task = asyncio.create_task(self._forward_service_to_ws(tunnel_id, reader, service))
+            self.background_tasks.add(task)
+            task.add_done_callback(self.background_tasks.discard)
         except OSError as e:
             logger.error(f'Error connecting to local service {service}: {e}')
             await self._close_tcp_tunnel(tunnel_id)
@@ -269,7 +279,9 @@ class MultiProtocolAgent:
 
         with suppress(Exception):
             tunnel.writer.close()
-            await tunnel.writer.wait_closed()
+            # wait_closed() is only supported in Python 3.7+
+            if hasattr(tunnel.writer, 'wait_closed'):
+                await tunnel.writer.wait_closed()
 
         duration_str = self._format_duration(time.time() - tunnel.start_time)
         client_str = f' (Client: {tunnel.client_cn})' if tunnel.client_cn else ''
@@ -299,7 +311,9 @@ class MultiProtocolAgent:
                 if handler:
                     # Execute long-running commands in background to not block other messages
                     if msg_type in background_handlers:
-                        asyncio.create_task(handler(message))  # noqa: RUF006
+                        task = asyncio.create_task(handler(message))
+                        self.background_tasks.add(task)
+                        task.add_done_callback(self.background_tasks.discard)
                     else:
                         await handler(message)
         except websockets.ConnectionClosed:
@@ -363,7 +377,7 @@ class MultiProtocolAgent:
                 'FORCE_COLOR': '1',
                 'CLICOLOR_FORCE': '1',
                 'PYTHONUNBUFFERED': '1',
-                **dict(os.environ),  # Inherit current env
+                **{k: v for k, v in os.environ.items() if isinstance(v, str)},  # Inherit current env
             }
 
             # Execute command with streaming output (non-interactive)
@@ -485,8 +499,6 @@ class MultiProtocolAgent:
         # (Version checks are unreliable on some distro packages)
         use_additional_headers = False
         try:
-            import inspect
-
             sig = inspect.signature(websockets.connect)
             if 'additional_headers' in sig.parameters:
                 use_additional_headers = True
@@ -533,8 +545,6 @@ class MultiProtocolAgent:
 
 def load_migasfree_config() -> dict:
     """Invokes migasfree CLI to obtain configuration in JSON format without importing client modules."""
-    import subprocess
-
     try:
         result = subprocess.run(
             ['migasfree', '--quiet', 'conf', '--json'],
@@ -554,8 +564,6 @@ def load_migasfree_config() -> dict:
 
 def load_migasfree_cid() -> int:
     """Invokes migasfree CLI to obtain the local computer ID (CID)."""
-    import subprocess
-
     for cmd in [
         ['migasfree', '--quiet', 'info', 'id'],
         ['sudo', 'migasfree', '--quiet', 'info', 'id'],
@@ -582,8 +590,6 @@ async def main() -> None:
     server = config.get('server', 'localhost')
     if '://' not in server:
         server = f'{config.get("api_protocol", "https")}://{server}'
-
-    from urllib.parse import urlparse
 
     parsed = urlparse(server)
     fqdn = parsed.hostname or 'localhost'
