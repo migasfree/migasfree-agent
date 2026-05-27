@@ -23,13 +23,6 @@ from typing import Any, Dict, Optional, Tuple
 import requests
 import requests.adapters
 import websockets
-from migasfree_client import settings
-from migasfree_client.mtls import (
-    get_mtls_ca_file,
-    get_mtls_cert_file,
-    get_mtls_key_file,
-)
-from migasfree_client.utils import get_config
 
 # Configure logging
 logging.basicConfig(
@@ -40,7 +33,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Constants
-EVENTS_JSON_FILE = settings.EVENTS_JSON_FILE
 DEFAULT_SERVICES = {
     'ssh': 22,
     'vnc': 5900,
@@ -99,15 +91,12 @@ class SSLConfig:
     """SSL/mTLS configuration."""
 
     fqdn: str
-    key_file: str = field(init=False)
-    cert_file: str = field(init=False)
-    ca_file: str = field(init=False)
+    key_file: str
+    cert_file: str
+    ca_file: str
     context: ssl.SSLContext = field(init=False)
 
     def __post_init__(self) -> None:
-        self.key_file = get_mtls_key_file(self.fqdn)
-        self.cert_file = get_mtls_cert_file(self.fqdn)
-        self.ca_file = get_mtls_ca_file(self.fqdn)
         self.context = self._create_context()
 
     def _create_context(self) -> ssl.SSLContext:
@@ -542,34 +531,82 @@ class MultiProtocolAgent:
                 await asyncio.sleep(RECONNECT_DELAY)
 
 
-def load_agent_config() -> Tuple[int, str]:
-    """Loads agent configuration from traits file."""
-    with open(EVENTS_JSON_FILE) as f:
-        traits = json.load(f)
-    agent_id = int(traits['after']['CID'][0])
-    project = str(traits['after']['PRJ'][0])
-    return agent_id, project
+def load_migasfree_config() -> dict:
+    """Invokes migasfree CLI to obtain configuration in JSON format without importing client modules."""
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ['migasfree', '--quiet', 'conf', '--json'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True,
+        )
+        return json.loads(result.stdout)
+    except Exception as e:
+        logger.error(f'Failed to get configuration from migasfree: {e}')
+        raise RuntimeError('migasfree command is not available or failed to execute.') from e
+
+
+def load_migasfree_cid() -> int:
+    """Invokes migasfree CLI to obtain the local computer ID (CID)."""
+    import subprocess
+
+    for cmd in [
+        ['migasfree', '--quiet', 'info', 'id'],
+        ['sudo', 'migasfree', '--quiet', 'info', 'id'],
+    ]:
+        try:
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=True,
+            )
+            return int(result.stdout.strip())
+        except Exception as e:
+            logger.debug(f'Failed to obtain CID via {cmd}: {e}')
+
+    raise RuntimeError('Failed to obtain CID via migasfree info id.')
 
 
 async def main() -> None:
     """Main entry point."""
-    server = get_config(settings.CONF_FILE, 'client').get('server', 'localhost')
+    config = load_migasfree_config()
+
+    server = config.get('server', 'localhost')
     if '://' not in server:
-        server = f'https://{server}'
+        server = f'{config.get("api_protocol", "https")}://{server}'
 
     from urllib.parse import urlparse
 
     parsed = urlparse(server)
     fqdn = parsed.hostname or 'localhost'
     port = parsed.port
-    protocol = parsed.scheme or 'https'
+    protocol = parsed.scheme or config.get('api_protocol', 'https')
 
     port_str = f':{port}' if port else ''
     manager_url = f'{protocol}://{fqdn}{port_str}/manager/v1/private/tunnel'
 
-    ssl_config = SSLConfig(fqdn)
+    ca_file = config.get('ca_file', '')
+    cert_file = ''
+    key_file = ''
+    if ca_file:
+        mtls_dir = os.path.dirname(ca_file)
+        cert_file = os.path.join(mtls_dir, 'cert.pem')
+        key_file = os.path.join(mtls_dir, 'key.pem')
 
-    agent_id, project = load_agent_config()
+    ssl_config = SSLConfig(
+        fqdn=fqdn,
+        ca_file=ca_file,
+        cert_file=cert_file,
+        key_file=key_file,
+    )
+
+    agent_id = load_migasfree_cid()
+    project = config.get('project', 'migasfree')
 
     agent = MultiProtocolAgent(
         manager_url=manager_url,

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.13] - 2026-05-27
+
+### Changed
+
+- Decoupled the agent completely from `migasfree-client` Python packages and modules, eliminating all library-level imports.
+- Replaced direct internal config and mTLS path lookups with synchronous CLI execution of `migasfree --quiet conf --json`.
+- Dynamically resolved client certificate and key paths (`cert.pem`, `key.pem`) relative to the directory containing the retrieved `ca.pem` (`ca_file`).
+- Replaced internal cache traits file parser with synchronous execution of `migasfree --quiet info id` (falling back to `sudo` execution if required) to securely retrieve the local Computer ID (`CID`).
+
 ## [1.0.12] - 2026-05-24
 
 ### Added

@@ -142,3 +142,11 @@ To prevent memory leaks and "zombie" connections:
 - Every tunnel has a timeout for local port checks.
 - Binary streams are explicitly closed when `tunnel_managed` messages arrive.
 - Signal handlers (SIGTERM) ensure graceful shutdown and notification to the Relay.
+
+### Unregistered Client Behavior
+
+If the local machine is not yet registered with Migasfree:
+1. **Missing Certificates**: No client mTLS keys (`cert.pem` and `key.pem`) exist in `/var/migasfree-client/mtls/`.
+2. **Missing ID**: The official CLI commands (`migasfree --quiet info id`) fail to return a valid Computer ID (`CID`).
+
+Under these conditions, the agent will throw a `RuntimeError` during startup. When run as a systemd service, this causes the service to exit. Systemd will continuously attempt to restart the agent (according to its restart policy). Once the machine is registered (e.g., after the first `migasfree sync`), the agent automatically recovers, initializes successfully, and connects to the Relay.

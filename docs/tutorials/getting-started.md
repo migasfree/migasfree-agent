@@ -16,6 +16,10 @@ Before we begin, ensure you have:
 2. The **migasfree-client** package installed and registered.
 3. A **Migasfree Manager** URL.
 
+> [!IMPORTANT]
+> **What if the client is not registered yet?**
+> The agent relies completely on the client's local mTLS certificates and configuration to run. If the client is not registered, the agent will fail to start (raising a `RuntimeError` due to missing Computer ID or SSL certificates). If run as a systemd service, it will exit and restart periodically until the computer is registered (`migasfree sync`).
+
 ---
 
 ## 🚀 Step 1: Install the Agent
