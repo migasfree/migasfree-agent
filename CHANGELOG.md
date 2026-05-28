@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-05-28
+
+### Added
+
+- Implemented periodic heartbeat registration (`_heartbeat_loop`) that runs asynchronously every 60 seconds once connected to the Relay.
+- Introduced dynamic local service port detection during heartbeats to keep central service availability up-to-date.
+- Added a robust unit test suite (`TestAgentHeartbeat`) to verify heartbeat loops, message registration, and task cancellation.
+
+### Changed
+
+- Enhanced connection lifecycle management to safely launch and clean up the background heartbeat task, avoiding resource leaks.
+
 ## [1.0.13] - 2026-05-27
 
 ### Changed

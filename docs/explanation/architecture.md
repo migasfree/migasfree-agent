@@ -135,6 +135,14 @@ stateDiagram-v2
     Operational --> Registering : WS Close / Error
 ```
 
+### Connection Health & Heartbeat
+
+To prevent "zombie" online statuses in Redis (e.g., when the agent crashes or experiences network failure without a clean disconnect), a cooperative heartbeat is active:
+
+1. **Short-lived initial registration**: When the agent registers with the Manager, the record has a **120-second TTL**.
+2. **Periodic WS Heartbeats**: While connected to the Relay WebSocket, the agent executes a background loop sending `register_agent` frames every **60 seconds**.
+3. **Automatic Redis TTL Refresh**: The Relay handles these periodic frames to dynamically update the agent's Redis key TTL to **300 seconds**, maintaining its online status active. If the connection fails, the key naturally expires, ensuring high reliability of the remote access dashboard.
+
 ### Resource Cleanup
 
 To prevent memory leaks and "zombie" connections:
@@ -146,6 +154,7 @@ To prevent memory leaks and "zombie" connections:
 ### Unregistered Client Behavior
 
 If the local machine is not yet registered with Migasfree:
+
 1. **Missing Certificates**: No client mTLS keys (`cert.pem` and `key.pem`) exist in `/var/migasfree-client/mtls/`.
 2. **Missing ID**: The official CLI commands (`migasfree --quiet info id`) fail to return a valid Computer ID (`CID`).
 

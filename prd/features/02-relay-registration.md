@@ -88,3 +88,21 @@ To survive temporary network outages, VPN disconnects, or system sleeps, the age
 > 1. On initial disconnect, wait 5 seconds.
 > 2. For consecutive failures, double the delay (10s, 20s, 40s) up to a maximum of **60 seconds**.
 > 3. Periodically re-query the Manager `/tunnel/` endpoint, in case the client has been assigned to a different Relay node.
+
+---
+
+## 5. Heartbeat & Redis TTL Expiration
+
+To maintain real-time reliability of the agent's online/offline status, a cooperative heartbeat and expiration mechanism is implemented:
+
+### 5.1 Manager Registry Expiration (TTL)
+
+* When the agent registers with the Manager via the initial HTTP `POST /register`, the registry entry is saved in Redis (`agent:<id>`) with an explicit Time-To-Live (TTL) of **120 seconds** (`ex=120`).
+* If the agent fails to successfully connect to the Relay's WebSocket within 120 seconds, the entry is automatically purged from Redis, avoiding false positives.
+
+### 5.2 Active Connection Heartbeat
+
+* Once the WebSocket connection is active, the agent starts an asynchronous background loop (`_heartbeat_loop()`).
+* Every **60 seconds**, the agent sends a `register_agent` frame over the WebSocket.
+* Upon receiving this heartbeat frame, the Relay refreshes the agent's presence and updates the Redis key's TTL to **300 seconds** (`ex=300`), which is also refreshed every 30 seconds by the Relay's internal monitoring service.
+* Any dynamic change in the local service ports (such as SSH, VNC, RDP) is detected and reported during these heartbeats, ensuring the central management UI always displays accurate, up-to-date service availability.

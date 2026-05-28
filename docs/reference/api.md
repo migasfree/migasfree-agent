@@ -23,6 +23,13 @@ class MultiProtocolAgent:
 | `agent_id` | `int` | No | Unique CID (system identifier) |
 | `services` | `dict` | No | Map of service names to TCP ports |
 
+#### Key Methods
+
+| Method | Return Type | Description |
+| :--- | :--- | :--- |
+| `connect()` | `None` | Starts the main connection loop, manages the WebSocket handshake, registers the agent, and launches the heartbeat task. |
+| `_heartbeat_loop()` | `None` | Asynchronous loop running in background while connected. Re-sends `register_agent` frames every 60 seconds to maintain the connection status in Redis and dynamically update service availability. |
+
 ---
 
 ### Data Models (Internal State)

@@ -200,6 +200,19 @@ class MultiProtocolAgent:
         await self.websocket.send(json.dumps(message))
         logger.info(f'Agent registered: {self.agent_id}')
 
+    async def _heartbeat_loop(self) -> None:
+        """Periodically registers the agent to keep status active in Redis."""
+        try:
+            while self.websocket is not None and not self.websocket.closed:
+                await asyncio.sleep(60)
+                if self.websocket is not None and not self.websocket.closed:
+                    logger.debug('Sending periodic heartbeat registration')
+                    await self._register()
+        except asyncio.CancelledError:
+            logger.debug('Heartbeat loop cancelled')
+        except Exception as e:
+            logger.error(f'Error in heartbeat loop: {e}')
+
     async def _handle_tcp_tunnel(
         self,
         tunnel_id: str,
@@ -532,7 +545,15 @@ class MultiProtocolAgent:
                     self.websocket = ws
                     logger.info('Connection established')
                     await self._register()
-                    await self._handle_messages()
+
+                    # Start periodic heartbeat task
+                    heartbeat_task = asyncio.ensure_future(self._heartbeat_loop())
+                    try:
+                        await self._handle_messages()
+                    finally:
+                        heartbeat_task.cancel()
+                        with suppress(asyncio.CancelledError):
+                            await heartbeat_task
 
                 logger.warning('Disconnected from Relay')
                 self.server_url = None

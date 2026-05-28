@@ -137,3 +137,41 @@ class TestAgentGeneral:
         kwargs = agent.session.post.call_args[1]
         assert 'cert' in kwargs
         assert 'verify' in kwargs
+
+
+class TestAgentHeartbeat:
+    @mark_asyncio
+    async def test_heartbeat_loop_runs_and_calls_register(self, agent):
+        """Test that heartbeat loop periodically registers the agent."""
+        agent.websocket = MagicMock()
+        agent.websocket.closed = False
+        agent._register = AsyncMock()
+
+        # Mock asyncio.sleep to break the loop on the second iteration
+        call_count = 0
+
+        async def mock_sleep(seconds):
+            nonlocal call_count
+            call_count += 1
+            if call_count >= 2:
+                raise asyncio.CancelledError()
+
+        with patch('asyncio.sleep', side_effect=mock_sleep):
+            await agent._heartbeat_loop()
+
+        assert call_count == 2
+        agent._register.assert_called_once()
+
+    @mark_asyncio
+    async def test_heartbeat_loop_exits_when_websocket_closed(self, agent):
+        """Test that heartbeat loop exits immediately if websocket is closed."""
+        agent.websocket = MagicMock()
+        agent.websocket.closed = True
+        agent._register = AsyncMock()
+
+        # Since websocket is closed, loop should not sleep nor register
+        with patch('asyncio.sleep', AsyncMock()) as mock_sleep:
+            await agent._heartbeat_loop()
+            mock_sleep.assert_not_called()
+            agent._register.assert_not_called()
+

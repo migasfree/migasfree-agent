@@ -29,7 +29,7 @@ Always use a virtual environment (e.g., `.venv`).
 - **Compatibility**: Code MUST be compatible with **Python 3.6+**. Handle `dataclasses` backport and `asyncio` loop differences carefully.
 - **Linter/Formatter**: Ruff is authoritative.
 - **Quote Style**: Single quotes (`'`) are preferred.
-- **Async Patterns**: Use modern `asyncio` features but maintain fallback for Python 3.6 (e.g., `asyncio.get_event_loop().run_until_complete()` instead of `asyncio.run()`).
+- **Async Patterns**: Use modern `asyncio` features but maintain fallback for Python 3.6 (e.g., `asyncio.get_event_loop().run_until_complete()` instead of `asyncio.run()`). For background tasks, use `asyncio.ensure_future()` instead of `asyncio.create_task()`, and always handle clean cancellation in `finally` blocks and `suppress(asyncio.CancelledError)`.
 - **Dependency Management**: Rely on `migasfree-client` for mTLS configuration and certificate paths.
 
 ## 4. Architecture Standards
