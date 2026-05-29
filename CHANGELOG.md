@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-05-29
+
+### Fixed
+
+- Resolved `'ClientConnection' object has no attribute 'closed'` error in the heartbeat loop when running with `websockets` v14+, which removed the legacy `.closed` attribute.
+- Added version-compatible `_ws_is_open()` helper that detects connection state via `.closed` (v10-v13) or `.state == State.OPEN` (v14+), preventing premature disconnection cycles.
+
 ## [1.1.0] - 2026-05-28
 
 ### Added
@@ -152,6 +159,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.2.0]: https://github.com/migasfree/migasfree-agent/compare/1.1.0...1.2.0
+[1.1.0]: https://github.com/migasfree/migasfree-agent/compare/1.0.13...1.1.0
+[1.0.13]: https://github.com/migasfree/migasfree-agent/compare/1.0.12...1.0.13
+[1.0.12]: https://github.com/migasfree/migasfree-agent/compare/1.0.11...1.0.12
+[1.0.11]: https://github.com/migasfree/migasfree-agent/compare/1.0.10...1.0.11
 [1.0.10]: https://github.com/migasfree/migasfree-agent/compare/1.0.9...1.0.10
 [1.0.9]: https://github.com/migasfree/migasfree-agent/compare/1.0.8...1.0.9
 [1.0.8]: https://github.com/migasfree/migasfree-agent/compare/1.0.7...1.0.8
