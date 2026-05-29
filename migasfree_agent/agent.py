@@ -212,6 +212,7 @@ class MultiProtocolAgent:
         if hasattr(ws, 'state'):
             try:
                 from websockets.protocol import State
+
                 return ws.state is State.OPEN
             except ImportError:
                 pass
