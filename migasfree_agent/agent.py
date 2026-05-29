@@ -200,12 +200,30 @@ class MultiProtocolAgent:
         await self.websocket.send(json.dumps(message))
         logger.info(f'Agent registered: {self.agent_id}')
 
+    def _ws_is_open(self) -> bool:
+        """Checks if the WebSocket connection is open (compatible with websockets v10-v14+)."""
+        ws = self.websocket
+        if ws is None:
+            return False
+        # websockets v10-v13: has a .closed boolean attribute
+        if hasattr(ws, 'closed'):
+            return not ws.closed
+        # websockets v14+: uses .state (websockets.protocol.State enum)
+        if hasattr(ws, 'state'):
+            try:
+                from websockets.protocol import State
+                return ws.state is State.OPEN
+            except ImportError:
+                pass
+        # Last resort: if the object exists, assume open
+        return True
+
     async def _heartbeat_loop(self) -> None:
         """Periodically registers the agent to keep status active in Redis."""
         try:
-            while self.websocket is not None and not self.websocket.closed:
+            while self._ws_is_open():
                 await asyncio.sleep(60)
-                if self.websocket is not None and not self.websocket.closed:
+                if self._ws_is_open():
                     logger.debug('Sending periodic heartbeat registration')
                     await self._register()
         except asyncio.CancelledError:
