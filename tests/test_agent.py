@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -23,12 +24,13 @@ from migasfree_agent.agent import MultiProtocolAgent, SSLConfig  # noqa: E402
 
 @pytest.fixture
 def mock_ssl_config():
-    return SSLConfig(
-        fqdn='localhost',
-        ca_file='/tmp/ca',
-        cert_file='/tmp/cert',
-        key_file='/tmp/key',
-    )
+    with patch('os.path.isfile', return_value=True):
+        return SSLConfig(
+            fqdn='localhost',
+            ca_file='/tmp/ca',
+            cert_file='/tmp/cert',
+            key_file='/tmp/key',
+        )
 
 
 @pytest.fixture
@@ -174,4 +176,3 @@ class TestAgentHeartbeat:
             await agent._heartbeat_loop()
             mock_sleep.assert_not_called()
             agent._register.assert_not_called()
-
