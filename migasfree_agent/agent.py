@@ -102,10 +102,7 @@ class SSLConfig:
 
     def __post_init__(self) -> None:
         # mTLS is only possible if all three files exist on disk
-        self.mtls_enabled = all(
-            f and os.path.isfile(f)
-            for f in (self.ca_file, self.cert_file, self.key_file)
-        )
+        self.mtls_enabled = all(f and os.path.isfile(f) for f in (self.ca_file, self.cert_file, self.key_file))
         self.context = self._create_context()
 
     def _create_context(self) -> ssl.SSLContext:
