@@ -91,42 +91,56 @@ class TunnelInfo:
 
 @dataclass
 class SSLConfig:
-    """SSL/mTLS configuration."""
+    """SSL/mTLS configuration with automatic fallback to plain TLS."""
 
     fqdn: str
     key_file: str
     cert_file: str
     ca_file: str
+    mtls_enabled: bool = field(init=False)
     context: ssl.SSLContext = field(init=False)
 
     def __post_init__(self) -> None:
+        # mTLS is only possible if all three files exist on disk
+        self.mtls_enabled = all(
+            f and os.path.isfile(f)
+            for f in (self.ca_file, self.cert_file, self.key_file)
+        )
         self.context = self._create_context()
 
     def _create_context(self) -> ssl.SSLContext:
-        """Creates and configures SSL context."""
-        # Force TLSv1.2 or higher for maximum compatibility with HAProxy mTLS
+        """Creates SSL context: full mTLS when certs are present, plain TLS otherwise."""
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         if hasattr(ssl, 'TLSVersion'):
             ctx.minimum_version = ssl.TLSVersion.TLSv1_2
         else:
             # Fallback for Python 3.6 which lacks TLSVersion attribute
             ctx.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
-        ctx.check_hostname = False  # We verify via mTLS certificates
-        ctx.verify_mode = ssl.CERT_REQUIRED
+
         if hasattr(ssl, 'VERIFY_X509_STRICT'):
             ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
         if hasattr(ssl, 'VERIFY_X509_PARTIAL_CHAIN'):
             ctx.verify_flags &= ~ssl.VERIFY_X509_PARTIAL_CHAIN
 
-        try:
-            ctx.load_verify_locations(cafile=self.ca_file)
-        except Exception as e:
-            logger.error(f'Failed to load CA certificate: {e}')
-
-        try:
-            ctx.load_cert_chain(certfile=self.cert_file, keyfile=self.key_file)
-        except Exception as e:
-            logger.warning(f'Failed to load mTLS certificate: {e}')
+        if self.mtls_enabled:
+            # Full mTLS: verify server with custom CA and present client certificate
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_REQUIRED
+            try:
+                ctx.load_verify_locations(cafile=self.ca_file)
+            except Exception as e:
+                logger.error(f'Failed to load CA certificate: {e}')
+            try:
+                ctx.load_cert_chain(certfile=self.cert_file, keyfile=self.key_file)
+            except Exception as e:
+                logger.warning(f'Failed to load mTLS client certificate: {e}')
+            logger.info('SSL mode: mTLS (mutual TLS with client certificate)')
+        else:
+            # Plain TLS: no client certificate, no strict server verification
+            # (internal servers typically use self-signed certs from the migasfree CA)
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            logger.info('SSL mode: standard TLS (no client certificate)')
 
         return ctx
 
@@ -492,17 +506,21 @@ class MultiProtocolAgent:
         logger.info(f'Contacting Manager at {self.manager_url}')
 
         def do_request() -> requests.Response:
-            return self.session.post(
-                f'{self.manager_url}/register',
-                json={
+            kwargs: Dict[str, Any] = {
+                'json': {
                     'id': self.agent_id,
                     'name': self.hostname,
                     'services': self._get_system_info()['services'],
                 },
-                timeout=5,
-                cert=(self.ssl_config.cert_file, self.ssl_config.key_file),
-                verify=self.ssl_config.ca_file,
-            )
+                'timeout': 5,
+            }
+            if self.ssl_config.mtls_enabled:
+                kwargs['cert'] = (self.ssl_config.cert_file, self.ssl_config.key_file)
+                kwargs['verify'] = self.ssl_config.ca_file
+            else:
+                # Standard TLS: no client cert, no strict server verification
+                kwargs['verify'] = False
+            return self.session.post(f'{self.manager_url}/register', **kwargs)
 
         try:
             loop = asyncio.get_event_loop()
@@ -653,6 +671,11 @@ async def main() -> None:
         cert_file=cert_file,
         key_file=key_file,
     )
+    if not ssl_config.mtls_enabled:
+        logger.warning(
+            'mTLS certificates not found; running in standard TLS mode. '
+            'Agent will connect without client certificate authentication.'
+        )
 
     agent_id = load_migasfree_cid()
     project = config.get('project', 'migasfree')
