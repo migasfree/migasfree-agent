@@ -25,6 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install git+https://github.com/migasfree/migasfree-client.git@REST-API
           pip install .[dev]
           pip install cx_Freeze
           # Install WPT directly from GitHub so the 'wpt' command is available
