@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-06-02
+
+### Added
+
+- **Windows Deployment Architecture**: Full packaging infrastructure for Windows deployment via WPT (`packaging/wpt/pms/`), including automatic registration in App Paths and global `.cmd` shims.
+- **Service Integration**: Native background execution management on Windows utilizing NSSM as a primary Windows Service, falling back seamlessly to `schtasks`.
+
+### Fixed
+
+- **Executable Resolution**: Fixed `FileNotFoundError [WinError 2]` in Windows environments when invoking Migasfree configuration commands via `subprocess`. The agent now transparently resolves the local client executable by dynamically checking for `.cmd` shims or classic `.exe` files across the system `PATH`.
+
 ## [1.3.0] - 2026-05-30
 
 ### Added
