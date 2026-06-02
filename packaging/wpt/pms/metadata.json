@@ -1,6 +1,6 @@
 {
   "name": "migasfree-agent",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Multi-protocol TCP tunnel agent for remote access via SSH, VNC, RDP through WebSocket tunnels.",
   "maintainer": "Jose Antonio Chavarría <jachavar@gmail.com>",
   "specification": "1.0.0",
