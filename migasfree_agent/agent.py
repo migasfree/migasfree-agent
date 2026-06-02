@@ -411,7 +411,11 @@ class MultiProtocolAgent:
             await self._send_exec_error(exec_id, error_msg)
             return
 
-        logger.info(f'Executing command from {client_cn}: {command}')
+        # Dynamically resolve 'migasfree' to handle WPT .cmd shims on Windows
+        if base_command == 'migasfree':
+            command_parts[0] = get_migasfree_executable()
+
+        logger.info(f'Executing command from {client_cn}: {" ".join(command_parts)}')
 
         try:
             # Prepare environment with forced color settings
