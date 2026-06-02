@@ -598,11 +598,24 @@ class MultiProtocolAgent:
                 await asyncio.sleep(RECONNECT_DELAY)
 
 
+def get_migasfree_executable() -> str:
+    """Returns the correct executable name for migasfree CLI, checking for WPT shims or standard exes."""
+    if sys.platform != 'win32':
+        return 'migasfree'
+
+    import shutil
+
+    if shutil.which('migasfree.cmd'):
+        return 'migasfree.cmd'
+    return 'migasfree'
+
+
 def load_migasfree_config() -> dict:
     """Invokes migasfree CLI to obtain configuration in JSON format without importing client modules."""
     try:
+        executable = get_migasfree_executable()
         result = subprocess.run(
-            ['migasfree', '--quiet', 'conf', '--json'],
+            [executable, '--quiet', 'conf', '--json'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -619,10 +632,14 @@ def load_migasfree_config() -> dict:
 
 def load_migasfree_cid() -> int:
     """Invokes migasfree CLI to obtain the local computer ID (CID)."""
-    for cmd in [
-        ['migasfree', '--quiet', 'info', 'id'],
-        ['sudo', 'migasfree', '--quiet', 'info', 'id'],
-    ]:
+    executable = get_migasfree_executable()
+    commands = [
+        [executable, '--quiet', 'info', 'id'],
+    ]
+    if sys.platform != 'win32':
+        commands.append(['sudo', executable, '--quiet', 'info', 'id'])
+
+    for cmd in commands:
         try:
             result = subprocess.run(
                 cmd,
