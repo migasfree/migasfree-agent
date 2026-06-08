@@ -120,7 +120,21 @@ def configure_service(exe_path: str, install_dir: str):
         )
 
 
+def stop_service():
+    """Stops the service if it exists to unlock files for replacement/deletion."""
+    if sys.platform != 'win32':
+        return
+
+    if shutil.which('nssm'):
+        subprocess.run(['nssm', 'stop', SERVICE_NAME], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        subprocess.run(['sc', 'stop', SERVICE_NAME], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
 def main():
+    # Stop the running service (if any) to prevent file locks
+    stop_service()
+
     # 1. Paths resolution
     wpt_install_dir = os.environ.get('WPT_INSTALL_DIR')
     if not wpt_install_dir:
